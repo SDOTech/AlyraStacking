@@ -1,0 +1,9 @@
+# AlyraStacking
+Staking DEFI
+
+Packets : 
+npm install @truffle/hdwallet-provider
+npm install dotenv
+
+
+Notes : le montant de SDO initial lors du déploiement est fixé dans 2èdeply_contracts.js
