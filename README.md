@@ -16,4 +16,4 @@ L'obtention de données de prix à partir de Chainlink vous offre un moyen de co
 - La quantité de la récompense doit être proportionnelle à la valeur bloquées sur le smart contract 
 
 Les exigences :
-Utilisation de l’oracle Chainlink (https://chain.link/data-feeds) 
+Utilisation de l’oracle Chainlink (https://chain.link/data-feeds)

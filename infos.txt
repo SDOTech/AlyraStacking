@@ -1,9 +1,17 @@
 # AlyraStacking
 Staking DEFI
 
-Packets : 
+Contracts Packets : 
 npm install @truffle/hdwallet-provider
 npm install dotenv
+yarn add @chainlink/contracts
+npm install @chainlink/contracts --save
+npm install @openzeppelin/contracts
+
+Dapp packets :
+maj de npm -> npm install -g npm
+supp des lock -> package-lock.json
+
+npm install react-bootstrap bootstrap
 
 
-Notes : le montant de SDO initial lors du déploiement est fixé dans 2èdeply_contracts.js
