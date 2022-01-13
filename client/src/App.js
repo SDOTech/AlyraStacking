@@ -67,7 +67,8 @@ class App extends Component {
     const { accounts } = this.state;    
         
     let accountInformation = {
-      account: accounts[0]
+      account: accounts[0],
+      stakedTokensList :[]
     };
     this.setState({ accountInformation });    
   };
@@ -75,7 +76,9 @@ class App extends Component {
   
   //============================ Contract interact ===========================
   
-
+  getStackedToken = async () => {
+    
+  }
   
   stake = async() => {
    //TODO
@@ -132,7 +135,7 @@ class App extends Component {
           <Card.Body>
             <Card.Title>{divConnectionInfo}</Card.Title>
             <Card.Text>
-             ...
+             DAI stackés : 
             </Card.Text>            
           </Card.Body>
         </Card>

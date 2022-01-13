@@ -95,8 +95,24 @@ contract AlyraDaiStaking {
     }
 
     // ********************* Functions for DAPP *********************
-    //TODO
+
     function getSDOTokenAddress() public view returns (address) {
         return address(SdoToken);
+    }
+
+    function getUserTokenAdresses(address owner)
+        public
+        view
+        returns (address[] memory)
+    {
+        //TODO
+    }
+
+    function getStackedToken(address tokenAddress, address owner)
+        public
+        view
+        returns (uint256)
+    {
+        return stakingUserBalance[owner][tokenAddress];
     }
 }
