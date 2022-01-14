@@ -2,8 +2,10 @@ import React, { Component } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import getWeb3 from "./getWeb3";
 import Button from 'react-bootstrap/Button';
+import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
-import AlyraStakingContract from "./contracts/AlyraDaiStaking.json";
+import Stack from 'react-bootstrap/Stack';
+import AlyraStakingContract from "./contracts/AlyraStaking.json";
 import "./App.css";
 
 
@@ -18,7 +20,7 @@ class App extends Component {
       const web3 = await getWeb3();
 
       // Use web3 to get the user's accounts (Metamask).
-      const accounts = await web3.eth.getAccounts();
+      const accounts = await web3.eth.getAccounts(); 
 
       // get contract “AlyraStaking”
       const networkId = await web3.eth.net.getId();
@@ -77,12 +79,38 @@ class App extends Component {
   //============================ Contract interact ===========================
   
   getStackedToken = async () => {
-    
+    //TODO
   }
   
-  stake = async() => {
-   //TODO
-  }
+  stake = async () => {
+    try {
+      const { accounts, contract } = this.state;
+
+      const tokenAddress = this.tokenAddress.value;
+      await contract.methods.stakeToken(tokenAddress,1).send({from:accounts[0]}).then(response => {
+        alert('stacking réussi', "STAKE");
+      })
+      }catch (error) {
+        alert(error, "ERREUR");
+      }
+    }
+  
+
+    // // Add account
+    // registeringUsers = async () => {
+    //   try {
+  
+    //     const { accounts, contract } = this.state;
+    //     const address = this.address.value;
+  
+    //     await contract.methods.registeringUsers(address).send({ from: accounts[0] }).then(response => {
+    //       alert('Enregistrement réussi', "ENREGISTREMENT");
+    //       this.address.value = '';
+    //     })
+    //   } catch (error) {
+    //     alert(error, "ERREUR");
+    //   }
+    // }
  
 
   
@@ -109,7 +137,16 @@ class App extends Component {
       accountInformation.account + " ": 
       "Veuillez connecter un compte"
     
-        
+    //DIV Stake
+    let divStake =  
+    <Stack direction="horizontal" gap={3}>
+      <Form.Group>
+        <Form.Control type="text" id="tokenAddress"
+          ref={(input) => { this.tokenAddress = input }}
+        />
+      </Form.Group> 
+      <Button onClick={this.stake}  >Stake 10</Button>
+      </Stack> 
 
     return (
       <div className="App">
@@ -135,10 +172,12 @@ class App extends Component {
           <Card.Body>
             <Card.Title>{divConnectionInfo}</Card.Title>
             <Card.Text>
-             DAI stackés : 
+             ...
             </Card.Text>            
           </Card.Body>
         </Card>
+
+        {divStake}
 
 
       </div>

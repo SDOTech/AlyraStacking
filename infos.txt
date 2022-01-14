@@ -8,6 +8,9 @@ yarn add @chainlink/contracts
 npm install @chainlink/contracts --save
 npm install @openzeppelin/contracts
 
+npm install chai
+npm install truffle-assertions
+
 Dapp packets :
 maj de npm -> npm install -g npm
 supp des lock -> package-lock.json
