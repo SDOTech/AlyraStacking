@@ -96,23 +96,6 @@ class App extends Component {
     }
   
 
-    // // Add account
-    // registeringUsers = async () => {
-    //   try {
-  
-    //     const { accounts, contract } = this.state;
-    //     const address = this.address.value;
-  
-    //     await contract.methods.registeringUsers(address).send({ from: accounts[0] }).then(response => {
-    //       alert('Enregistrement réussi', "ENREGISTREMENT");
-    //       this.address.value = '';
-    //     })
-    //   } catch (error) {
-    //     alert(error, "ERREUR");
-    //   }
-    // }
- 
-
   
 
   // ========== Handles events ==========
