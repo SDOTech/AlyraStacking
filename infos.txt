@@ -10,6 +10,7 @@ npm install @openzeppelin/contracts
 
 npm install chai
 npm install truffle-assertions
+npm install @openzeppelin/test-helpers
 
 Dapp packets :
 maj de npm -> npm install -g npm
