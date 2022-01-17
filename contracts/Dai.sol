@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Dai is ERC20 {
     constructor(uint256 amount) ERC20("Dai Stable Coin", "Dai") {
-        //_mint(msg.sender, amount);
         _mint(msg.sender, amount * 10**uint256(decimals()));
     }
 

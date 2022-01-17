@@ -8,7 +8,7 @@ module.exports = async function (deployer,_network,accounts) {
   await deployer.deploy(SDOToken);
   const sdoToken = await SDOToken.deployed();
 
-  await deployer.deploy(DAIToken,100);
+  await deployer.deploy(DAIToken,10000);
   const daiToken = await DAIToken.deployed();
 
   await deployer.deploy(PriceConsumerV3);

@@ -6,20 +6,22 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./PriceConsumerV3.sol";
 
 contract AlyraStaking {
-    IERC20 SdoToken;
+    IERC20 SdoToken; // the reward token
 
     // ========= Entities =========
 
     struct Token {
         address tokenAddress;
         uint256 stakedAmount;
+        bool isUsed;
         uint256 lastTransactionDate;
     }
 
     // ========= Variables =========
 
-    //stakingUserBalance between adress token and amount
-    mapping(address => mapping(address => Token)) public stakingUserBalance;
+    //_stakingUserBalance between adress token and amount
+    mapping(address => mapping(address => Token)) public _stakingUserBalance;
+    mapping(address => address[]) _userToTokenAddress;
 
     //Oracle init
     PriceConsumerV3 private priceConsumerV3 = new PriceConsumerV3();
@@ -47,25 +49,30 @@ contract AlyraStaking {
         //Transfer amount to smartcontract
         IERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);
 
-        // TODO : compute reward
+        //Add token if not exist on Smart Contract
+        if (!_stakingUserBalance[msg.sender][tokenAddress].isUsed) {
+            //Add
+            _userToTokenAddress[msg.sender].push(tokenAddress);
 
-        if (stakingUserBalance[msg.sender][tokenAddress].stakedAmount == 0) {
             Token memory userToken = Token(
                 tokenAddress,
                 amount,
+                true,
                 block.timestamp
             );
-            stakingUserBalance[msg.sender][tokenAddress] = userToken;
+            _stakingUserBalance[msg.sender][tokenAddress] = userToken;
         } else {
-            stakingUserBalance[msg.sender][tokenAddress].stakedAmount =
-                stakingUserBalance[msg.sender][tokenAddress].stakedAmount +
-                amount;
+            //Update
+            _stakingUserBalance[msg.sender][tokenAddress]
+                .stakedAmount += amount;
         }
+
+        // TODO : compute reward
 
         //fire event
         emit TokenStaked(tokenAddress, amount);
 
-        return stakingUserBalance[msg.sender][tokenAddress].stakedAmount;
+        return _stakingUserBalance[msg.sender][tokenAddress].stakedAmount;
     }
 
     /// @notice Stake an amount of a specific ERC20 token
@@ -76,28 +83,18 @@ contract AlyraStaking {
         view
         returns (uint256)
     {
-        return stakingUserBalance[userAddress][tokenAddress].stakedAmount;
+        return _stakingUserBalance[userAddress][tokenAddress].stakedAmount;
     }
 
     // ********************* Functions for DAPP *********************
 
+    /// @notice Return address of RewardToken
     function getSDOTokenAddress() public view returns (address) {
         return address(SdoToken);
     }
 
-    // function getUserTokenAdresses(address owner)
-    //     public
-    //     view
-    //     returns (address[] memory)
-    // {
-    //     //TODO
-    // }
-
-    // function getStackedToken(address tokenAddress, address owner)
-    //     public
-    //     view
-    //     returns (uint256)
-    // {
-    //     return stakingUserBalance[owner][tokenAddress];
-    // }
+    /// @notice Return list of user's tokens staked on contract
+    function getStakedTokens() public view returns (address[] memory) {
+        return _userToTokenAddress[msg.sender];
+    }
 }
