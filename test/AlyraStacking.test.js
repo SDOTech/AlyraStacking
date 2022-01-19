@@ -19,6 +19,7 @@ contract("AlyraStacking", accounts => {
     const owner = accounts[0];
     const spender = accounts[5];
     const _initialAmountOfStake = 10;
+    const _initialAmountToWithdraw = 1;
     
     beforeEach(async function () {
         DaiInstance = await DaiToken.new(_initialDaisupply, { from: owner });
@@ -40,7 +41,7 @@ contract("AlyraStacking", accounts => {
         expect(totalSupply).to.be.bignumber.equal(_initialDaisupply);
     });
     
-    it("user stake should be stored", async () => {  
+    it("amount staked should be stored [stakeToken - getUserBalance]", async () => {  
         
         //give dai to spender
         await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });
@@ -57,6 +58,21 @@ contract("AlyraStacking", accounts => {
         let amountForSpender = await AlyraStackingInstance.getUserBalance(spender, DaiInstance.address);
         //console.log('amountForSpender: ' + amountForSpender);
         assert(amountForSpender, _initialAmountOfStake); //test amount is correctly stacked
+    });
+
+    it("withdraw a specific amount [withdrawTokens]", async () => {        
+
+        //give dai to spender
+        await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });
+        
+        //stake
+        await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender });  
+
+        const tx = await AlyraStackingInstance.withdrawTokens(DaiInstance.address, _initialAmountToWithdraw, { from: spender });
+        truffleAssert.eventEmitted(tx, 'TokenWithdrawn'); //test if event is fired
+
+        let amountForSpender = await AlyraStackingInstance.getUserBalance(spender, DaiInstance.address);
+        console.log('==>'+amountForSpender);
 
     });
 

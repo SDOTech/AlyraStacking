@@ -33,7 +33,7 @@ contract AlyraStaking {
 
     // ========= Events =========
     event TokenStaked(address tokenAddress, uint256 amount);
-    event TokenWithdraw(address tokenAddress, uint256 amount);
+    event TokenWithdrawn(address tokenAddress, uint256 amount);
 
     // =============================== Functions ===============================
 
@@ -84,6 +84,31 @@ contract AlyraStaking {
         returns (uint256)
     {
         return _stakingUserBalance[userAddress][tokenAddress].stakedAmount;
+    }
+
+    /// @notice Withdraw an amount of a specific token
+    /// @param tokenAddress address of the staked token
+    /// @param amount amount to withdraw
+    function withdrawTokens(address tokenAddress, uint256 amount) public {
+        require(amount > 0, "You cannot withdraw 0 token !");
+        require(
+            _stakingUserBalance[msg.sender][tokenAddress].stakedAmount > 0,
+            "This token never stacked on this contract !"
+        );
+        require(
+            _stakingUserBalance[msg.sender][tokenAddress].stakedAmount >=
+                amount,
+            "Cannot withdraw an amount bigger than stacked !"
+        );
+
+        IERC20(tokenAddress).transfer(msg.sender, amount);
+
+        _stakingUserBalance[msg.sender][tokenAddress].stakedAmount -= amount;
+        _stakingUserBalance[msg.sender][tokenAddress]
+            .lastTransactionDate = block.timestamp;
+
+        //fire event
+        emit TokenWithdrawn(tokenAddress, amount);
     }
 
     // ********************* Functions for DAPP *********************
