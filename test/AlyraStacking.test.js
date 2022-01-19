@@ -73,11 +73,8 @@ contract("AlyraStacking", accounts => {
         const tx = await AlyraStackingInstance.withdrawTokens(DaiInstance.address, _initialAmountToWithdraw, { from: spender });
         truffleAssert.eventEmitted(tx, 'TokenWithdrawn'); //test if event is fired
 
-        let amountForSpenderAfterWithdraw = await AlyraStackingInstance.getUserBalance(spender, DaiInstance.address);    
-        // console.log('amountForSpenderBeforeWithdraw ' + amountForSpenderBeforeWithdraw);
-        // console.log('amountForSpenderAfterWithdraw ' + amountForSpenderAfterWithdraw);
-        //assert.isBelow(amountForSpenderAfterWithdraw, amountForSpenderBeforeWithdraw, '- amountForSpenderAfterWithdraw strictly less than amountForSpenderBeforeWithdraw - ');
-        //expect(amountForSpenderAfterWithdraw).to.be.greaterThan(amountForSpenderBeforeWithdraw);
+        let amountForSpenderAfterWithdraw = await AlyraStackingInstance.getUserBalance(spender, DaiInstance.address); 
+        //assert.isBelow(amountForSpenderAfterWithdraw, amountForSpenderBeforeWithdraw, '- amountForSpenderAfterWithdraw strictly less than amountForSpenderBeforeWithdraw - ');        
         expect(parseInt(amountForSpenderBeforeWithdraw)).to.be.greaterThan(parseInt(amountForSpenderAfterWithdraw));
     });
 

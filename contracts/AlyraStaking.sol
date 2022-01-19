@@ -22,6 +22,11 @@ contract AlyraStaking {
     //_stakingUserBalance between adress token and amount
     mapping(address => mapping(address => Token)) public _stakingUserBalance;
     mapping(address => address[]) _userToTokenAddress;
+    mapping(address => uint256) _rewardAmount;
+
+    //Rewards variables
+    uint256 daysBeforewithdrawAllowed = 1; //cannot withdraw before 1 day
+    uint256 percentReward = 50; //reward is 50% of stacked amount
 
     //Oracle init
     PriceConsumerV3 private priceConsumerV3 = new PriceConsumerV3();
@@ -36,6 +41,20 @@ contract AlyraStaking {
     event TokenWithdrawn(address tokenAddress, uint256 amount);
 
     // =============================== Functions ===============================
+
+    /// @notice Compute reward and store it
+    /// @param userAddress user Address
+    /// @param tokenAddress token address
+    function computeReward(address userAddress, address tokenAddress)
+        private
+        returns (uint256)
+    {
+        uint256 reward = _stakingUserBalance[userAddress][tokenAddress]
+            .stakedAmount * (percentReward / 100);
+        _rewardAmount[userAddress] += reward;
+
+        return reward;
+    }
 
     /// @notice Stake an amount of a specific ERC20 token
     /// @param tokenAddress address of the staked token
