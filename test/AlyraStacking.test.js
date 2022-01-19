@@ -66,14 +66,19 @@ contract("AlyraStacking", accounts => {
         await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });
         
         //stake
-        await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender });  
+        await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender }); 
+        
+        let amountForSpenderBeforeWithdraw = await AlyraStackingInstance.getUserBalance(spender, DaiInstance.address);
 
         const tx = await AlyraStackingInstance.withdrawTokens(DaiInstance.address, _initialAmountToWithdraw, { from: spender });
         truffleAssert.eventEmitted(tx, 'TokenWithdrawn'); //test if event is fired
 
-        let amountForSpender = await AlyraStackingInstance.getUserBalance(spender, DaiInstance.address);
-        console.log('==>'+amountForSpender);
-
+        let amountForSpenderAfterWithdraw = await AlyraStackingInstance.getUserBalance(spender, DaiInstance.address);    
+        // console.log('amountForSpenderBeforeWithdraw ' + amountForSpenderBeforeWithdraw);
+        // console.log('amountForSpenderAfterWithdraw ' + amountForSpenderAfterWithdraw);
+        //assert.isBelow(amountForSpenderAfterWithdraw, amountForSpenderBeforeWithdraw, '- amountForSpenderAfterWithdraw strictly less than amountForSpenderBeforeWithdraw - ');
+        //expect(amountForSpenderAfterWithdraw).to.be.greaterThan(amountForSpenderBeforeWithdraw);
+        expect(parseInt(amountForSpenderBeforeWithdraw)).to.be.greaterThan(parseInt(amountForSpenderAfterWithdraw));
     });
 
 });
