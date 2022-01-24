@@ -5,11 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./PriceConsumerV3.sol";
 
-// User can withdraw it's token all the time
+// User cannot withdraw it's token before 1 year
 // Rewards are percent (rateReward) of amount stacked
-// Rewards are calculated on each stacking but cannot be withdrawn before 1 day
+// Rewards are calculated if last staking is more than 1 day
 contract AlyraStaking {
-    //IERC20 SdoToken; // the reward token
+    IERC20 SdoToken; // the reward token
 
     // ========= Entities =========
 
@@ -17,7 +17,12 @@ contract AlyraStaking {
         address tokenAddress;
         uint256 stakedAmount;
         bool isUsed;
-        uint256 lastTransactionDate;
+        uint256 lastTransactionDate;    
+    }
+
+    struct RewardInfo {
+        uint amount;
+        uint lastAmountClaimed;
     }
 
     // ========= constants =========
@@ -30,7 +35,7 @@ contract AlyraStaking {
     //_stakingUserBalance between adress token and amount
     mapping(address => mapping(address => Token)) public _stakingUserBalance;
     mapping(address => address[]) _userToTokenAddress;
-    mapping(address => uint256) _rewardAmount;
+    mapping(address => RewardInfo) _rewardAmount;
 
     //Rewards variables
     uint256 daysBeforewithdrawAllowed = 1; //cannot withdraw before 1 day
@@ -40,14 +45,14 @@ contract AlyraStaking {
     PriceConsumerV3 private priceConsumerV3 = new PriceConsumerV3();
 
     // ========= Constructor =========
-    //constructor(address sdoAddress) {
-    constructor() {
-        //SdoToken = IERC20(sdoAddress);
+    constructor(address sdoAddress) {
+        SdoToken = IERC20(sdoAddress);
     }
 
     // ========= Events =========
     event TokenStaked(address tokenAddress, uint256 amount);
     event TokenWithdrawn(address tokenAddress, uint256 amount);
+    event RewardsClaimed(uint256 amount);
 
     // =============================== Functions ===============================
 
@@ -59,16 +64,21 @@ contract AlyraStaking {
         returns (uint256)
     {
         uint256 reward = 0;
+        uint256 daysCount = 0;
         Token memory currentToken = _stakingUserBalance[userAddress][
             tokenAddress
         ];
 
         if (block.timestamp - currentToken.lastTransactionDate > DAY) {
-            //reward = currentToken.stakedAmount * (rateReward / 100);
-            reward = currentToken.stakedAmount * rateReward; // cannnot store decimal, so ui need divide by 100 the result !  
-            _rewardAmount[userAddress] = reward;
+            daysCount =  (block.timestamp - currentToken.lastTransactionDate) /60/60/24;
+            reward = (currentToken.stakedAmount * rateReward) * daysCount; // cannnot store decimal, so ui need divide by 100 the result !
+            
+            //check if user already claimed
+            uint amountAlreadyClaimed = _rewardAmount[userAddress].lastAmountClaimed;
+            
+            _rewardAmount[userAddress] = RewardInfo(reward-amountAlreadyClaimed,amountAlreadyClaimed);
         }
-        return _rewardAmount[userAddress];
+        return _rewardAmount[userAddress].amount;
     }
 
     /// @notice Stake an amount of a specific ERC20 token
@@ -102,7 +112,7 @@ contract AlyraStaking {
         }
 
         //compute reward
-        computeReward(msg.sender,tokenAddress);
+        computeReward(msg.sender, tokenAddress);
 
         //fire event
         emit TokenStaked(tokenAddress, amount);
@@ -156,48 +166,23 @@ contract AlyraStaking {
 
         //fire event
         emit TokenWithdrawn(tokenAddress, amount);
+
+        //compute reward
+        computeReward(msg.sender, tokenAddress);
     }
 
-    /// @notice factory to give chainlink data feed address for Rinkeby testnet
-    /// @param sourceTokenSymbol symbol of the token
-    /// @return an address
-    function getDataFeedAddressToETH(string memory sourceTokenSymbol)
-        private
-        pure
-        returns (address)
-    {
-        if (keccak256(bytes(sourceTokenSymbol)) == keccak256(bytes("DAI"))) {
-            return address(0x74825DbC8BF76CC4e9494d0ecB210f676Efa001D);
-        } else {
-            return address(0);
-        }
-    }
+    /// @notice transfert rewards
+    function ClaimRewards() public {
+        
+        require(_rewardAmount[msg.sender].amount>0 ,"No Reward to claim !");
+        uint amountToClaim = _rewardAmount[msg.sender].amount;
+       
+       //TODO MINT
 
-    /// @notice return the corresponding Rinkeby chainlink price for a token
-    /// @dev note: for test purpose it also returns 10 for AT1 and 20 for AT2 tokens
-    /// @param tokenAddress address of the staked token
-    /// @return an uint
-    function getTokenPrice(address tokenAddress) public view returns (int256) {
-        try ERC20(tokenAddress).symbol() returns (string memory tokenSymbol) {
-            address datafeedAddress = getDataFeedAddressToETH(tokenSymbol);
-            if (datafeedAddress == address(0)) {
-                if (keccak256(bytes(tokenSymbol)) == keccak256(bytes("SDO"))) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            } else {
-                try priceConsumerV3.getLatestPrice(tokenAddress) returns (
-                    int256 price
-                ) {
-                    return price;
-                } catch {
-                    return 0;
-                }
-            }
-        } catch {
-            return 0;
-        }
+       //update
+       _rewardAmount[msg.sender].lastAmountClaimed = amountToClaim;
+
+        emit RewardsClaimed(amountToClaim);
     }
 
     // ********************* Functions for DAPP *********************
@@ -210,7 +195,7 @@ contract AlyraStaking {
         returns (uint256)
     {
         uint256 totalRewards;
-        uint256 rewardAmount = _rewardAmount[userAddress];
+        uint256 rewardAmount = _rewardAmount[userAddress].amount;
         totalRewards += rewardAmount * uint256(getTokenPrice(tokenAddress));
         return totalRewards;
     }
@@ -223,5 +208,19 @@ contract AlyraStaking {
     /// @notice Return list of user's tokens staked on contract
     function getStakedTokens() public view returns (address[] memory) {
         return _userToTokenAddress[msg.sender];
+    }
+
+    /// @notice return the corresponding Rinkeby chainlink price for a token
+    /// @dev note: for test purpose it also returns 10 for AT1 and 20 for AT2 tokens
+    /// @param tokenAddress address of the staked token
+    /// @return an uint
+    function getTokenPrice(address tokenAddress) public view returns (int256) {
+        try priceConsumerV3.getLatestPrice(tokenAddress) returns (
+            int256 price
+        ) {
+            return price;
+        } catch {
+            return 0;
+        }
     }
 }

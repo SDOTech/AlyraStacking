@@ -1,6 +1,6 @@
 
 const DaiToken = artifacts.require("./DaiToken.sol");
-//const SDOToken = artifacts.require("./SDOToken.sol");
+const SDOToken = artifacts.require("./SDOToken.sol");
 const AlyraStacking = artifacts.require('./AlyraStaking.sol');
 const { assert,expect } = require('chai');
 const truffleAssert = require('truffle-assertions');
@@ -13,7 +13,7 @@ const { BN, ether, time } = require('@openzeppelin/test-helpers');
 contract("AlyraStacking", accounts => {
 
     const _DaiName = 'Dai';
-    //const _SDOName = 'SDO Coin';
+    const _SDOName = 'SDO Coin';
     
     const _initialDaisupply = new BN(1000);
     const _decimals = new BN(0);
@@ -24,9 +24,9 @@ contract("AlyraStacking", accounts => {
     
     beforeEach(async function () {
         DaiInstance = await DaiToken.new(_initialDaisupply, { from: owner });
-        //SDOInstance = await SDOToken.new({ from: owner });
-        //AlyraStackingInstance = await AlyraStacking.new(SDOInstance.address, { from: owner }); 
-        AlyraStackingInstance = await AlyraStacking.new({ from: owner }); 
+        SDOInstance = await SDOToken.new({ from: owner });
+        AlyraStackingInstance = await AlyraStacking.new(SDOInstance.address, { from: owner }); 
+        //AlyraStackingInstance = await AlyraStacking.new({ from: owner }); 
         
         await DaiInstance.approve(AlyraStackingInstance.address, 500, { from: spender })
     });
@@ -87,17 +87,26 @@ contract("AlyraStacking", accounts => {
         
         //stake
         await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender }); 
+        
+        // compute reward
+        let rewardBeforeTimeLimit = await AlyraStackingInstance.computeReward.call(spender, DaiInstance.address);
+        //console.log(`reward before: ${rewardBeforeTimeLimit}`);
+        assert.equal(parseInt(rewardBeforeTimeLimit), 0);
 
-        //let reward = await AlyraStackingInstance.computeReward(spender, DaiInstance.address);
-        let reward = await AlyraStackingInstance.computeReward.call(spender, DaiInstance.address);
-        console.log(`reward before: ${reward}`);
-
-        // add 2 days 
+        // add days 
         await time.increase(time.duration.days(3));
 
-        let rewardAfter = await AlyraStackingInstance.computeReward.call(spender, DaiInstance.address);
-        console.log(`reward after: ${rewardAfter}`);
-
+        // compute reward after days
+        let rewardAfterDays = await AlyraStackingInstance.computeReward.call(spender, DaiInstance.address);
+        //console.log(`reward after: ${rewardAfterDays}`);
+        assert.equal(parseInt(rewardAfterDays), 300);
     });
+
+    // it("Oracle should return value", async () => { 
+
+    //     let amount = await AlyraStackingInstance.getTokenPrice('0xc751E86208F0F8aF2d5CD0e29716cA7AD98B5eF5');
+    //     console.log(BN(amount));
+
+    // });
 
 });
