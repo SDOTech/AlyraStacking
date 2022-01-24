@@ -178,6 +178,7 @@ contract AlyraStaking {
         uint amountToClaim = _rewardAmount[msg.sender].amount;
        
        //TODO MINT
+       //SdoToken.mint(msg.sender,amountToClaim);
 
        //update
        _rewardAmount[msg.sender].lastAmountClaimed = amountToClaim;
