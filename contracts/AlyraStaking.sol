@@ -200,10 +200,10 @@ contract AlyraStaking {
         return totalRewards;
     }
 
-    // /// @notice Return address of RewardToken
-    // function getSDOTokenAddress() public view returns (address) {
-    //     return address(SdoToken);
-    // }
+    /// @notice Return address of RewardToken
+    function getSDOTokenAddress() public view returns (address) {
+        return address(SdoToken);
+    }
 
     /// @notice Return list of user's tokens staked on contract
     function getStakedTokens() public view returns (address[] memory) {
