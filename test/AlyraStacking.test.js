@@ -89,7 +89,7 @@ contract("AlyraStacking", accounts => {
         await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender }); 
         
         // compute reward
-        let rewardBeforeTimeLimit = await AlyraStackingInstance.computeReward.call(spender, DaiInstance.address);
+        let rewardBeforeTimeLimit = await AlyraStackingInstance.computeRewardForToken.call(spender, DaiInstance.address);
         //console.log(`reward before: ${rewardBeforeTimeLimit}`);
         assert.equal(parseInt(rewardBeforeTimeLimit), 0);
 
@@ -97,16 +97,40 @@ contract("AlyraStacking", accounts => {
         await time.increase(time.duration.days(3));
 
         // compute reward after days
-        let rewardAfterDays = await AlyraStackingInstance.computeReward.call(spender, DaiInstance.address);
+        let rewardAfterDays = await AlyraStackingInstance.computeRewardForToken.call(spender, DaiInstance.address);
         //console.log(`reward after: ${rewardAfterDays}`);
         assert.equal(parseInt(rewardAfterDays), 300);
     });
 
-    // it("Oracle should return value", async () => { 
+    // it("Oracle should return value", async () => {
 
     //     let amount = await AlyraStackingInstance.getTokenPrice('0xc751E86208F0F8aF2d5CD0e29716cA7AD98B5eF5');
     //     console.log(BN(amount));
 
     // });
+    
+    it("user should gt rewards after claim", async () => {
+
+        //give dai to spender
+        await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });
+        
+        //stake
+        await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender }); 
+        
+        // add days 
+        await time.increase(time.duration.days(3));
+        
+        let rewards = await AlyraStackingInstance.getTokensRewards.call(spender);
+        //console.log(`User rewards to claim : ${rewards}`);
+        assert.equal(parseInt(rewards), 300);
+        
+        //claim
+         const tx = await AlyraStackingInstance.ClaimRewards( { from: spender });
+         truffleAssert.eventEmitted(tx, 'RewardsClaimed');
+
+        rewards = await AlyraStackingInstance.getTokensRewards.call(spender);
+        //console.log(`User rewards after claimed : ${rewards}`);
+        assert.equal(parseInt(rewards), 0);
+    });
 
 });

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./PriceConsumerV3.sol";
+import "./SDOToken.sol";
 
 // User cannot withdraw it's token before 1 year
 // Rewards are percent (rateReward) of amount stacked
@@ -32,14 +33,16 @@ contract AlyraStaking {
 
     // ========= Variables =========
 
-    //_stakingUserBalance between adress token and amount
-    mapping(address => mapping(address => Token)) public _stakingUserBalance;
-    mapping(address => address[]) _userToTokenAddress;
+    
+    mapping(address => mapping(address => Token)) public _stakingUserBalance;//relation between user and adress-token and amount
+    mapping(address => address[]) _userToTokenAddress; //define a relation between a user and its token
     mapping(address => RewardInfo) _rewardAmount;
 
     //Rewards variables
     uint256 daysBeforewithdrawAllowed = 1; //cannot withdraw before 1 day
     uint256 rateReward = 10; //reward is 10% of stacked amount
+
+    SDOToken private _SDOInstance = new SDOToken();//TEMP
 
     //Oracle init
     PriceConsumerV3 private priceConsumerV3 = new PriceConsumerV3();
@@ -56,18 +59,28 @@ contract AlyraStaking {
 
     // =============================== Functions ===============================
 
-    /// @notice Compute reward and store it
+      /// @notice Compute reward for user
+    function computeReward(address userAddress) private {
+
+        //get all token staked by user
+        address[] memory userTokenAddresses = _userToTokenAddress[userAddress];
+        
+        //loop on each user token to compute rewards
+        for(uint i = 0; i<userTokenAddresses.length;i++){
+            computeRewardForToken(userAddress, userTokenAddresses[i]);
+        }
+    }
+
+    /// @notice Compute reward for specific token and store it on main reward mapping
     /// @param userAddress user Address
     /// @param tokenAddress token address
-    function computeReward(address userAddress, address tokenAddress)
+    function computeRewardForToken(address userAddress, address tokenAddress)
         public
         returns (uint256)
     {
         uint256 reward = 0;
         uint256 daysCount = 0;
-        Token memory currentToken = _stakingUserBalance[userAddress][
-            tokenAddress
-        ];
+        Token memory currentToken = _stakingUserBalance[userAddress][tokenAddress];
 
         if (block.timestamp - currentToken.lastTransactionDate > DAY) {
             daysCount =  (block.timestamp - currentToken.lastTransactionDate) /60/60/24;
@@ -75,10 +88,18 @@ contract AlyraStaking {
             
             //check if user already claimed
             uint amountAlreadyClaimed = _rewardAmount[userAddress].lastAmountClaimed;
-            
-            _rewardAmount[userAddress] = RewardInfo(reward-amountAlreadyClaimed,amountAlreadyClaimed);
+
+            if(amountAlreadyClaimed>0){
+                _rewardAmount[userAddress] = RewardInfo(reward-amountAlreadyClaimed,amountAlreadyClaimed);}
+                else{
+
+                    RewardInfo memory RewInf = RewardInfo(reward,block.timestamp) ; 
+                    _rewardAmount[userAddress] = RewInf;
+                }
         }
-        return _rewardAmount[userAddress].amount;
+
+
+        return _rewardAmount[userAddress].amount;    
     }
 
     /// @notice Stake an amount of a specific ERC20 token
@@ -112,7 +133,7 @@ contract AlyraStaking {
         }
 
         //compute reward
-        computeReward(msg.sender, tokenAddress);
+        computeRewardForToken(msg.sender, tokenAddress);
 
         //fire event
         emit TokenStaked(tokenAddress, amount);
@@ -168,17 +189,21 @@ contract AlyraStaking {
         emit TokenWithdrawn(tokenAddress, amount);
 
         //compute reward
-        computeReward(msg.sender, tokenAddress);
+        computeRewardForToken(msg.sender, tokenAddress);
     }
 
     /// @notice transfert rewards
     function ClaimRewards() public {
         
+        //compute if rewrds available now
+        computeReward(msg.sender);
         require(_rewardAmount[msg.sender].amount>0 ,"No Reward to claim !");
+        
         uint amountToClaim = _rewardAmount[msg.sender].amount;
        
        //TODO MINT
        //SdoToken.mint(msg.sender,amountToClaim);
+       _SDOInstance.mint(msg.sender,amountToClaim);
 
        //update
        _rewardAmount[msg.sender].lastAmountClaimed = amountToClaim;
@@ -190,15 +215,13 @@ contract AlyraStaking {
 
     /// @notice return the total stake reward price
     /// @return an uint
-    function getTokensRewards(address userAddress, address tokenAddress)
+    function getTokensRewards(address userAddress)
         public
-        view
+        //view
         returns (uint256)
-    {
-        uint256 totalRewards;
-        uint256 rewardAmount = _rewardAmount[userAddress].amount;
-        totalRewards += rewardAmount * uint256(getTokenPrice(tokenAddress));
-        return totalRewards;
+    { 
+        computeReward(userAddress);
+        return _rewardAmount[userAddress].amount;
     }
 
     /// @notice Return address of RewardToken
