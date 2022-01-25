@@ -23,35 +23,29 @@ contract("AlyraStacking", accounts => {
     const _initialAmountToWithdraw = 1;
     
     beforeEach(async function () {
-        DaiInstance = await DaiToken.new(_initialDaisupply, { from: owner });
-        SDOInstance = await SDOToken.new({ from: owner });
-        AlyraStackingInstance = await AlyraStacking.new(SDOInstance.address, { from: owner }); 
-        //AlyraStackingInstance = await AlyraStacking.new({ from: owner }); 
+        DaiInstance = await DaiToken.new(_initialDaisupply, { from: owner });        
+        AlyraStackingInstance = await AlyraStacking.new({ from: owner }); 
+        SDOInstance = await SDOToken.new(AlyraStackingInstance.address, { from: owner });
         
+        //approve
         await DaiInstance.approve(AlyraStackingInstance.address, 500, { from: spender })
     });
 
     it('Test sur les noms', async function () {
         expect(await DaiInstance.name()).to.equal(_DaiName);
-        //expect(await SDOInstance.name()).to.equal(_SDOName);
+        expect(await SDOInstance.name()).to.equal(_SDOName);
     });
 
     it('Check Dai totalSupply', async function () {
         
-        let totalSupply = await DaiInstance.totalSupply();        
-        //console.log('totalSupply: '+totalSupply);
+        let totalSupply = await DaiInstance.totalSupply();                
         expect(totalSupply).to.be.bignumber.equal(_initialDaisupply);
     });
     
     it("amount staked should be stored [stakeToken - getUserBalance]", async () => {  
         
         //give dai to spender
-        await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });
-
-        // let balSpender = await DaiInstance.balanceOf(spender);
-        // let daiContractBal = await DaiInstance.balanceOf(owner);
-        // console.log('balSpender: ' + balSpender);
-        // console.log('daiContractBal: '+ daiContractBal);
+        await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });   
     
         //spender stake _initialAmountOfStake DAI on contract        
         const tx = await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender });  

@@ -10,8 +10,7 @@ import "./SDOToken.sol";
 // Rewards are percent (rateReward) of amount stacked
 // Rewards are calculated if last staking is more than 1 day
 contract AlyraStaking {
-    IERC20 SdoToken; // the reward token
-
+    
     // ========= Entities =========
 
     struct Token {
@@ -41,15 +40,14 @@ contract AlyraStaking {
     //Rewards variables
     uint256 daysBeforewithdrawAllowed = 1; //cannot withdraw before 1 day
     uint256 rateReward = 10; //reward is 10% of stacked amount
-
-    SDOToken private _SDOInstance = new SDOToken();//TEMP
+    SDOToken private _SDOInstance = new SDOToken(address(this));//the reward token
 
     //Oracle init
     PriceConsumerV3 private priceConsumerV3 = new PriceConsumerV3();
 
     // ========= Constructor =========
-    constructor(address sdoAddress) {
-        SdoToken = IERC20(sdoAddress);
+    constructor() {
+        
     }
 
     // ========= Events =========
@@ -201,8 +199,7 @@ contract AlyraStaking {
         
         uint amountToClaim = _rewardAmount[msg.sender].amount;
        
-       //TODO MINT
-       //SdoToken.mint(msg.sender,amountToClaim);
+       // MINT      
        _SDOInstance.mint(msg.sender,amountToClaim);
 
        //update
@@ -226,7 +223,7 @@ contract AlyraStaking {
 
     /// @notice Return address of RewardToken
     function getSDOTokenAddress() public view returns (address) {
-        return address(SdoToken);
+        return address(_SDOInstance);
     }
 
     /// @notice Return list of user's tokens staked on contract
