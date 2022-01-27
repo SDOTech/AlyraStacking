@@ -1,11 +1,14 @@
 import React, { Component } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import getWeb3 from "./getWeb3";
+
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
-import Stack from 'react-bootstrap/Stack';
-import Dialog from 'react-bootstrap-dialog'
+import CardGroup from 'react-bootstrap/CardGroup';
+import Accordion from 'react-bootstrap/Accordion';
+import Dialog from 'react-bootstrap-dialog';
+
 import AlyraStakingContract from "./contracts/AlyraStaking.json";
 import DaiContract from "./contracts/Dai.json";
 import "./App.css";
@@ -83,12 +86,17 @@ class App extends Component {
 
   
   setAccountInformation = async () => {
-    const { accounts } = this.state;    
-        
+    
+    const { accounts, contract, contractDai } = this.state;  
+
+    const amount = await contract.methods.getUserBalance(accounts[0], contractDai._address).call();
+    
     let accountInformation = {
-      account: accounts[0],
-      stakedTokensList :[]
+      account: accounts[0],      
+      daiStackedAmount: amount
     };
+
+
     this.setState({ accountInformation });    
   };
 
@@ -118,7 +126,6 @@ class App extends Component {
   //============================ Contract interact ===========================
   
   approveIt = async () => {
-
     try {    
 
       const { accounts, contract, contractDai } = this.state;
@@ -140,23 +147,16 @@ class App extends Component {
       const tokenAddress = this.tokenAddress.value;
       const stckAmount = this.amountToStake.value;
       
-       await contract.methods.stakeToken(tokenAddress, stckAmount).send({ from: accounts[0] }).then(response => {
-          alert('stacking réussi', "STAKE");
-        });
-   
+       await contract.methods.stakeToken(tokenAddress, stckAmount).send({ from: accounts[0] }).then(response => {          
+         this.setAccountInformation();
+        });   
     } catch (error) {
       alert(error, "ERREUR"); 
     }
   }
  
-
   
 
-  
-
-    getStackedToken = async () => {
-      //TODO
-    }
 
   // ========== Handles events ==========
 
@@ -180,26 +180,62 @@ class App extends Component {
       accountInformation.account + " ": 
       "Veuillez connecter un compte"
     
+    //DIV Contract Info
+    let divContractInfo =
+ 
+          <Card border="primary" style={{ maxWidth: '30rem' }}>          
+          <Card.Body>            
+            <Card.Text>
+              Adresse du contrat :  {contractInfo ?  contractInfo.address: ""}          
+            </Card.Text>  
+            <Card.Text>
+             tDAI address : {contractInfo ?  contractInfo.daiAddress: ""}          
+            </Card.Text>
+            <Card.Text>
+             SDOToken address : {contractInfo ?  contractInfo.sdoTokenAddress: ""}          
+            </Card.Text>
+          </Card.Body>
+        </Card>
+    
+    //DIV User Info
+    let divUserInfo = 
+    <Card border="primary" style={{ maxWidth: '30rem' }}> 
+    <Card.Header>Utilisateur</Card.Header>
+    <Card.Body>           
+      <Card.Text>
+       DAI stackés : {accountInformation ? accountInformation.daiStackedAmount : ""}
+      </Card.Text>   
+      <Card.Text>
+       Récompense (SDO) : 
+      </Card.Text>  
+    </Card.Body>
+    </Card>
+           
+    
     //DIV Stake
-    let divStake =  
-    <Stack direction="horizontal" gap={3}>      
-        <Form className="w-10"> 
-        <Form.Group>
-          <Form.Control type="text" id="tokenAddress" placeholder="adresse token"  ref={(input) => { this.tokenAddress = input }} />          
-        </Form.Group> 
-        <Form.Group>
-        <Form.Control type="text" id="amountToStake" placeholder="Montant" ref={(input) => { this.amountToStake = input }} />
-          </Form.Group>
-          </Form>
-
-      <Button onClick={this.approveIt} >Approuver</Button> 
-      <Button onClick={this.confirmStake} >Stacker</Button>
-      </Stack> 
+    let divStake =    
+      <Card border="primary" style={{ maxWidth: '30rem' }}> 
+         <Card.Header>tDAI</Card.Header>
+        <Form> 
+          <Form.Group>
+              {/* <Form.Control type="text" id="tokenAddress" placeholder="adresse token"  ref={(input) => { this.tokenAddress = input }} />           */}
+                        
+              <Card.Body>
+                
+                <Card.Text>
+                Entrez ici le montant de tDAI à stacker, puis approuver avant de Stacker.
+                    <Form.Control type="text" id="amountToStake" placeholder="Montant" ref={(input) => { this.amountToStake = input }} />     
+                </Card.Text>                
+                  <Button onClick={this.approveIt} >Approuver</Button> {' '} 
+                  <Button onClick={this.confirmStake} >Stacker</Button>
+              </Card.Body>
+                     
+          </Form.Group>        
+        </Form>
+      </Card>  
+   
     
-    
-    
-    
-
+// ========================================== DISPLAY ==========================================
     return (
       <div className="App">
         <h1>STACKING DAPP</h1>
@@ -208,42 +244,19 @@ class App extends Component {
          {/* Modal Dialog */}
         <Dialog ref={(component) => { this.dialog = component }} />
 
-         {/* Contract info */}
-         <Card>
-          <Card.Header>smart contract info</Card.Header>
-          <Card.Body>            
-            <Card.Text>
-              Adresse du contrat :  {contractInfo ?  contractInfo.address: ""}          
-            </Card.Text>  
-            <Card.Text>
-             testDAI address : {contractInfo ?  contractInfo.daiAddress: ""}          
-            </Card.Text>
-            <Card.Text>
-             SDOToken address : {contractInfo ?  contractInfo.sdoTokenAddress: ""}          
-            </Card.Text>
-          </Card.Body>
-        </Card>
 
-         {/* User Account Info */}
-         <Card>
-          <Card.Header>Utilisateur</Card.Header>
-          <Card.Body>
-            <Card.Title>{divConnectionInfo}</Card.Title>
-            <Card.Text>
-             DAI stackés : 
-            </Card.Text>   
-            <Card.Text>
-             Récompense (SDO) : 
-            </Card.Text>  
-          </Card.Body>
-        </Card>
-
-        <h2>Token à stacker</h2>
-        {divStake}
+        <div align='center'>  
+         
+          {divContractInfo}                    
+          {divUserInfo}               
+          
+          </div>  
+          
         
-    
-
-
+        <div align='center'>
+          {divStake}
+          </div>
+        
       </div>
     );
   }
