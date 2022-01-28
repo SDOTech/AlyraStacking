@@ -1,5 +1,5 @@
 
-const DaiToken = artifacts.require("./DaiToken.sol");
+const DaiToken = artifacts.require("./Dai.sol");
 const SDOToken = artifacts.require("./SDOToken.sol");
 const AlyraStacking = artifacts.require('./AlyraStaking.sol');
 const { assert,expect } = require('chai');
@@ -43,9 +43,9 @@ contract("AlyraStacking", accounts => {
     });
     
     it("amount staked should be stored [stakeToken - getUserBalance]", async () => {  
-        
+       
         //give dai to spender
-        await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });   
+        await DaiInstance.transfer(spender, _initialAmountOfStake, { from: owner });          
     
         //spender stake _initialAmountOfStake DAI on contract        
         const tx = await AlyraStackingInstance.stakeToken(DaiInstance.address, _initialAmountOfStake, { from: spender });  
@@ -96,12 +96,12 @@ contract("AlyraStacking", accounts => {
         assert.equal(parseInt(rewardAfterDays), 300);
     });
 
-    // it("Oracle should return value", async () => {
+    it("Oracle should return value", async () => {
 
-    //     let amount = await AlyraStackingInstance.getTokenPrice('0xc751E86208F0F8aF2d5CD0e29716cA7AD98B5eF5');
-    //     console.log(BN(amount));
+        let amount = await AlyraStackingInstance.getTokenPrice('0x74825DbC8BF76CC4e9494d0ecB210f676Efa001D').call(); //DAI Rinkeby
+        console.log(BN(amount));
 
-    // });
+    });
     
     it("user should gt rewards after claim", async () => {
 

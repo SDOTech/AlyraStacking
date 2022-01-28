@@ -17,5 +17,6 @@ maj de npm -> npm install -g npm
 supp des lock -> package-lock.json
 
 npm install react-bootstrap bootstrap
+npm i react-bootstrap-dialog --force (https://morioh.com/p/d516ea000e8d)
 
 

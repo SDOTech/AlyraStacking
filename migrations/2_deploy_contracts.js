@@ -3,7 +3,7 @@ const DAIToken = artifacts.require("./Dai.sol");
 const PriceConsumerV3 = artifacts.require("./PriceConsumerV3");
 const AlyraStaking = artifacts.require("./AlyraStaking");
 
-module.exports = async function (deployer,_network,accounts) {
+module.exports = async function (deployer,_network) {
 
   await deployer.deploy(DAIToken,1000);
   const daiToken = await DAIToken.deployed();

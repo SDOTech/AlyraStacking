@@ -89,11 +89,15 @@ class App extends Component {
     
     const { accounts, contract, contractDai } = this.state;  
 
-    const amount = await contract.methods.getUserBalance(accounts[0], contractDai._address).call();
+    const daiAmount = await contract.methods.getUserBalance(accounts[0], contractDai._address).call();
+    const reward = await contract.methods.getTokensRewards(accounts[0]).call();
+    const daiPrice = await contract.methods.getTokenPrice('0x74825DbC8BF76CC4e9494d0ecB210f676Efa001D').call();
     
     let accountInformation = {
       account: accounts[0],      
-      daiStackedAmount: amount
+      daiStackedAmount: daiAmount,
+      rewardAmount: reward,
+      daiTokenPrice: daiPrice
     };
 
 
@@ -120,8 +124,50 @@ class App extends Component {
       }catch (error) {
         alert(error, "ERREUR");
       }
+  }
+  
+  confirmWithdraw = async () => {
+    try {
+      this.dialog.show({
+        title: 'Retirer les fonds',
+        body: 'Confirmez-vous le retrait ?',
+        actions: [
+          Dialog.CancelAction(),
+          Dialog.OKAction(() => {           
+            console.log('RETRAIT');
+            this.withdrawIt();
+          })
+        ],
+        bsSize: 'small',
+        onHide: (dialog) => {
+          dialog.hide()        
+        }
+      })       
+    }catch (error) {
+      alert(error, "ERREUR");
     }
+  }
 
+  confirmClaimRewards = async () => {
+    try {
+      this.dialog.show({
+        title: 'Retirer les récompenses',
+        body: 'Confirmez-vous le retrait ?',
+        actions: [
+          Dialog.CancelAction(),
+          Dialog.OKAction(() => {                       
+            this.claimRewards();
+          })
+        ],
+        bsSize: 'small',
+        onHide: (dialog) => {
+          dialog.hide()        
+        }
+      })       
+    }catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
   
   //============================ Contract interact ===========================
   
@@ -142,21 +188,49 @@ class App extends Component {
   
   stackeIt = async () => {
     try {
-      const { accounts, contract } = this.state;
+      const { accounts, contract, contractDai } = this.state;
 
-      const tokenAddress = this.tokenAddress.value;
+      //const tokenAddress = this.tokenAddress.value;
+      const tokenAddress = contractDai._address;
       const stckAmount = this.amountToStake.value;
       
        await contract.methods.stakeToken(tokenAddress, stckAmount).send({ from: accounts[0] }).then(response => {          
          this.setAccountInformation();
+         this.amountToStake.value = 0;
         });   
     } catch (error) {
       alert(error, "ERREUR"); 
     }
   }
  
-  
+  withdrawIt = async () => {
+    try {
+      const { accounts, contract, contractDai, contractInformation } = this.state;
 
+
+      const daiAllStackedAmount = await contract.methods.getUserBalance(accounts[0], contractDai._address).call();
+      const tokenAddress = contractDai._address;      
+      
+       await contract.methods.withdrawTokens(tokenAddress, daiAllStackedAmount).send({ from: accounts[0] }).then(response => {          
+         this.setAccountInformation();         
+        });   
+    } catch (error) {
+      alert(error, "ERREUR"); 
+    }
+  }
+
+  claimRewards = async () => {
+    try {
+      const { accounts, contract } = this.state;  
+      
+       await contract.methods.ClaimRewards().send({ from: accounts[0] }).then(response => {          
+         this.setAccountInformation();         
+        });   
+    } catch (error) {
+      alert(error, "ERREUR"); 
+    }
+  }
+ 
 
   // ========== Handles events ==========
 
@@ -203,13 +277,19 @@ class App extends Component {
     <Card.Header>Utilisateur</Card.Header>
     <Card.Body>           
       <Card.Text>
-       DAI stackés : {accountInformation ? accountInformation.daiStackedAmount : ""}
+            Stackés : {accountInformation ? `${accountInformation.daiStackedAmount} DAI  ` : ""}
+            {accountInformation && accountInformation.daiStackedAmount ?
+             <Button variant="primary" size="sm" onClick={this.confirmWithdraw} >Retirer tout</Button>
+              : ""}
       </Card.Text>   
       <Card.Text>
-       Récompense (SDO) : 
+            Récompense : {accountInformation ? `${accountInformation.rewardAmount} SDO  ` : ""} 
+            {accountInformation && accountInformation.rewardAmount > 0 ?
+              <Button variant="success" size="sm" onClick={this.confirmClaimRewards} >Retirer les récompenses</Button>
+              : ""}
       </Card.Text>  
     </Card.Body>
-    </Card>
+      </Card>
            
     
     //DIV Stake
@@ -217,14 +297,11 @@ class App extends Component {
       <Card border="primary" style={{ maxWidth: '30rem' }}> 
          <Card.Header>tDAI</Card.Header>
         <Form> 
-          <Form.Group>
-              {/* <Form.Control type="text" id="tokenAddress" placeholder="adresse token"  ref={(input) => { this.tokenAddress = input }} />           */}
-                        
-              <Card.Body>
-                
+          <Form.Group>                        
+              <Card.Body>                
                 <Card.Text>
                 Entrez ici le montant de tDAI à stacker, puis approuver avant de Stacker.
-                    <Form.Control type="text" id="amountToStake" placeholder="Montant" ref={(input) => { this.amountToStake = input }} />     
+                    <Form.Control type="number" id="amountToStake" defaultValue="0" placeholder="Montant" ref={(input) => { this.amountToStake = input }} />     
                 </Card.Text>                
                   <Button onClick={this.approveIt} >Approuver</Button> {' '} 
                   <Button onClick={this.confirmStake} >Stacker</Button>

@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./PriceConsumerV3.sol";
 import "./SDOToken.sol";
 
-// User cannot withdraw it's token before 1 year
 // Rewards are percent (rateReward) of amount stacked
 // Rewards are calculated if last staking is more than 1 day
+// WARNING : user can withdraw any time for test. BUT we need to add a time limit before withdraw relative to reward time (here 1 day)
+// WARNING : user cannot withdraw reward at this time. We need to add a withdraw function to do this
 contract AlyraStaking {
     
     // ========= Entities =========
@@ -98,6 +99,11 @@ contract AlyraStaking {
 
 
         return _rewardAmount[userAddress].amount;    
+    }
+
+     /// @notice Approve a specific ERC20 token for msg.sender
+    function ApproveToken(address tokenAddress, uint256 amount) public {
+        ERC20(tokenAddress).approve((msg.sender), amount);
     }
 
     /// @notice Stake an amount of a specific ERC20 token
